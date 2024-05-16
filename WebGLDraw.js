@@ -212,7 +212,7 @@ function main() {
 		handleTextureLoaded(cubeImage, cubeTexture); 
 	}
 	cubeImage.crossOrigin = "anonymous";
-	cubeImage.src = "https://i.namu.wiki/i/7klX2mBV94XVD_3d9ocZPHXxEDpOrY3OmaXbIRXq3-LHMNDsUFx9IekBpxG4vFwi1XATMsNOD_gBxUJVWAC1SQfmGoushNekXrCRNfp3kOBee0YmKR5wmuGphMjK3f_o4Zse9aP_WSk802KNdLtIjA.webp";
+	cubeImage.src = "https://3nlab.github.io/Project-Clicker/Image.png";
 	cubeImage.width = 512;
 	cubeImage.height = 512;
 
