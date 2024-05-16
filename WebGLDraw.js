@@ -63,22 +63,18 @@ class camera {
 		this.view.x = 0;
 		this.view.y = 0;
 		this.view.z = -1;
-		
+	
 		//this.projMatrix.setPerspective(this.fov, (canvas.width)/(canvas.height), 0.1, 100);
 		this.projMatrix.setOrtho(-aspect, aspect, -1, 1, 0.1, 1000.0);
 		console.log(this.projMatrix);
 		this.viewMatrix.setLookAt(this.position.x, this.position.y, this.position.z, this.position.x + this.view.x, this.position.y + this.view.y, this.position.z + this.view.z, 0, 1, 0);
-
-		gl.uniformMatrix4fv(u_ProjMatrix, false, this.projMatrix.elements);
-		gl.uniformMatrix4fv(u_ViewMatrix, false, this.viewMatrix.elements);
-
+		
 		window.addEventListener("keydown", function(e){
 			cam.checkKeyDown(e);
 		}, false);
 	}
 
 	checkKeyDown(e) {
-		console.log(e.keyCode);
 		if (e.keyCode === 65) {
 			this.position.x -= 0.1;
 		}
@@ -97,8 +93,6 @@ class camera {
 	update() {
 		const angleInRadians = this.rot * Math.PI / 180;
 		this.viewMatrix.setLookAt(this.position.x, this.position.y, this.position.z, this.position.x + this.view.x, this.position.y + this.view.y, this.position.z + this.view.z, 0, 1, 0);
-		gl.uniformMatrix4fv(u_ViewMatrix, false, this.viewMatrix.elements);
-		console.log("ok");
 	}
 }
 
@@ -141,9 +135,10 @@ function raycast(position, view) {
 }
 
 function Update_frame(){
-	gl.drawElements(gl.TRIANGLES, vc.indices.length, gl.UNSIGNED_BYTE, 0);
+	gl.uniformMatrix4fv(u_ViewMatrix, false, cam.viewMatrix.elements);
+	gl.uniformMatrix4fv(u_ProjMatrix, false, cam.projMatrix.elements);
+	drawObject(vc);
 	window.requestAnimationFrame(Update_frame);
-	console.log("YES");
 }
 
 function handleTextureLoaded(cubeImage, texture) {
@@ -174,6 +169,8 @@ function initiate(){
 	u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
 	u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
 	u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
+	
+	vc.modelMatrix.setTranslate(0, 0, 0);
 
 	var vbuf = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vbuf);
@@ -182,6 +179,26 @@ function initiate(){
 
 	gl.clearColor(0.9, 0.9, 0.9, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+}
+
+function drawObject(obj){
+	gl.uniformMatrix4fv(u_ModelMatrix, false, obj.modelMatrix.elements);
+	
+	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, gl.false, 24, 0);
+	gl.enableVertexAttribArray(a_Position);
+
+	gl.vertexAttribPointer(Color, 3, gl.FLOAT, gl.false, 24, 12);
+	gl.enableVertexAttribArray(Color);
+	
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
+	gl.uniform1i(gl.getUniformLocation(gl.program, "u_Sampler"), 0);
+
+	gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, obj.indices, gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, obj.a_TexCoord, gl.STATIC_DRAW);
+
+	gl.drawElements(gl.TRIANGLES, obj.indices.length, gl.UNSIGNED_BYTE, 0);
 }
 
 function main() {
@@ -212,26 +229,8 @@ function main() {
 	// 	var worldPos = screenToWorld(cam,x,y);
 	// 	var intersection = raycast(cam.position, worldPos);
 	// })
-
-	vc.modelMatrix.setTranslate(0, 0, 0);
 	
-	gl.uniformMatrix4fv(u_ModelMatrix, false, vc.modelMatrix.elements);
-	gl.uniformMatrix4fv(u_ViewMatrix, false, cam.viewMatrix.elements);
-	gl.uniformMatrix4fv(u_ProjMatrix, false, cam.projMatrix.elements);
-
-	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, gl.false, 24	, 0);
-	gl.enableVertexAttribArray(a_Position);
-
-	gl.vertexAttribPointer(Color, 3, gl.FLOAT, gl.false, 24, 12);
-	gl.enableVertexAttribArray(Color);
-	
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
-	gl.uniform1i(gl.getUniformLocation(gl.program, "u_Sampler"), 0);
-
-	gl.bufferData(gl.ARRAY_BUFFER, vc.vertices, gl.STATIC_DRAW);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, vc.indices, gl.STATIC_DRAW);
-	gl.bufferData(gl.ARRAY_BUFFER, vc.a_TexCoord, gl.STATIC_DRAW);
+	drawObject(vc);
 
 	window.requestAnimationFrame(Update_frame);
 }
