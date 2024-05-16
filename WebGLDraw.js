@@ -39,9 +39,9 @@ class vertex{
 		this.modelMatrix = new Matrix4();
 		this.a_TexCoord = new Float32Array([
 			1.0, 1.0,
-			-1.0, -1.0,
-			1.0, 1.0,
-			-1.0, 1.0,
+			0.5, 0.5,
+			0.0, 0.0,
+			1.0, 0.0,
 		]);
 	} 
 }
@@ -148,6 +148,7 @@ function handleTextureLoaded(cubeImage, texture) {
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
 	gl.generateMipmap(gl.TEXTURE_2D);
 	gl.bindTexture(gl.TEXTURE_2D, null);
+	console.log(cubeImage.height);
 }
 
 function loadTexture(gl, n, texture, u_Sampler, image){
@@ -198,6 +199,10 @@ function drawObject(obj){
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, obj.indices, gl.STATIC_DRAW);
 	gl.bufferData(gl.ARRAY_BUFFER, obj.a_TexCoord, gl.STATIC_DRAW);
 
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); 
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); 
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); 
+
 	gl.drawElements(gl.TRIANGLES, obj.indices.length, gl.UNSIGNED_BYTE, 0);
 }
 
@@ -215,10 +220,6 @@ function main() {
 	cubeImage.src = "https://3nlab.github.io/Project-Clicker/Image.png";
 	cubeImage.width = 512;
 	cubeImage.height = 512;
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); 
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); 
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); 
 
 	// window.addEventListener("click", function(e){
 	// 	var x = e.clientX;
