@@ -31,17 +31,17 @@ class vertex{
 			1, 1, 0, 1, 1, 1,
 			-1, 1, 0, 1, 0, 1,
 			-1, -1, 0, 1, 0, 0,
-			1, -1, 0, 0, 1, 0,
+			1, -1, 0, 0, 1, 0
 		]);
 		this.indices = new Uint8Array ([
-			0, 1, 2, 0, 2, 3,
+			0, 1, 2, 0, 2, 3
 		]);
 		this.modelMatrix = new Matrix4();
 		this.a_TexCoord = new Float32Array([
 			1.0, 1.0,
-			0.5, 0.5,
+			0.0, 1.0,
 			0.0, 0.0,
-			1.0, 0.0,
+			1.0, 0.0
 		]);
 	} 
 }
@@ -66,7 +66,6 @@ class camera {
 	
 		//this.projMatrix.setPerspective(this.fov, (canvas.width)/(canvas.height), 0.1, 100);
 		this.projMatrix.setOrtho(-aspect, aspect, -1, 1, 0.1, 1000.0);
-		console.log(this.projMatrix);
 		this.viewMatrix.setLookAt(this.position.x, this.position.y, this.position.z, this.position.x + this.view.x, this.position.y + this.view.y, this.position.z + this.view.z, 0, 1, 0);
 		
 		window.addEventListener("keydown", function(e){
@@ -148,16 +147,15 @@ function handleTextureLoaded(cubeImage, texture) {
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
 	gl.generateMipmap(gl.TEXTURE_2D);
 	gl.bindTexture(gl.TEXTURE_2D, null);
-	console.log(cubeImage.height);
 }
 
-function loadTexture(gl, n, texture, u_Sampler, image){
+function loadTexture(gl, n, texture, u_Sampler, cubeImage){
    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); 
    gl.activeTexture(gl.TEXTURE0);
    gl.bindTexture(gl.TEXTURE_2D, texture);
    
    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, cubeImage);
+   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cubeImage);
 
    gl.uniform1i(u_Sampler, 0);
 }
@@ -218,8 +216,11 @@ function main() {
 	}
 	cubeImage.crossOrigin = "anonymous";
 	cubeImage.src = "https://3nlab.github.io/Project-Clicker/Image.png";
+	console.log(cubeImage);
 	cubeImage.width = 512;
 	cubeImage.height = 512;
+	var u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
+	loadTexture(gl, 0, cubeTexture, u_Sampler, cubeImage);
 
 	// window.addEventListener("click", function(e){
 	// 	var x = e.clientX;
