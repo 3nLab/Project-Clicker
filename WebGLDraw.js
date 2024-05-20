@@ -155,7 +155,7 @@ function loadTexture(gl, n, texture, u_Sampler, cubeImage){
    gl.bindTexture(gl.TEXTURE_2D, texture);
    
    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, cubeImage);
+   gl.texImage2D(gl.TEXTURE_2D, n, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, cubeImage);
 
    gl.uniform1i(u_Sampler, 0);
 }
@@ -193,10 +193,14 @@ function drawObject(obj){
 	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
 	gl.uniform1i(gl.getUniformLocation(gl.program, "u_Sampler"), 0);
 
-	gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, obj.indices, gl.STATIC_DRAW);
 	gl.bufferData(gl.ARRAY_BUFFER, obj.a_TexCoord, gl.STATIC_DRAW);
+	gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
 
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
+	gl.uniform1i(gl.getUniformLocation(gl.program, "u_Sampler"),0);
+
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, obj.indices, gl.STATIC_DRAW);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); 
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); 
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); 
@@ -212,6 +216,8 @@ function main() {
 	cubeTexture = gl.createTexture();
 	cubeImage = new Image();
 	cubeImage.onload = function() {
+		cubeImage.width = 512;
+		cubeImage.height = 512;
 		handleTextureLoaded(cubeImage, cubeTexture); 
 	}
 	cubeImage.crossOrigin = "anonymous";
