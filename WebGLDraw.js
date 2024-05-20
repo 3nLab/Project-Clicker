@@ -155,7 +155,7 @@ function loadTexture(gl, n, texture, u_Sampler, cubeImage){
    gl.bindTexture(gl.TEXTURE_2D, texture);
    
    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cubeImage);
+   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, cubeImage);
 
    gl.uniform1i(u_Sampler, 0);
 }
@@ -215,7 +215,7 @@ function main() {
 		handleTextureLoaded(cubeImage, cubeTexture); 
 	}
 	cubeImage.crossOrigin = "anonymous";
-	cubeImage.src = "https://3nlab.github.io/Project-Clicker/Image.png";
+	cubeImage.src = "https://3nlab.github.io/Project-Clicker/Image.jpg";
 	console.log(cubeImage);
 	cubeImage.width = 512;
 	cubeImage.height = 512;
