@@ -3,14 +3,14 @@ var VSHADER_SOURCE =
 	'uniform mat4 u_ViewMatrix;\n' +
 	'uniform mat4 u_ModelMatrix;\n' +
 	'uniform mat4 u_ProjMatrix;\n' +
-	'attribute vec3 Color; \n' +
+	'attribute vec3 a_Color; \n' +
 	'varying vec3 vColor; \n' +
 	'attribute vec2 a_TexCoord;\n' +
 	'varying vec2 v_TexCoord;\n' +
 	'void main() { \n' +
 	' gl_Position = u_ProjMatrix * u_ViewMatrix * u_ModelMatrix * vec4(a_Position, 1.0); \n' +
 	' gl_PointSize = 10.0; \n' +
-	' vColor = Color; \n' +
+	' vColor = a_Color; \n' +
 	' v_TexCoord = a_TexCoord;\n' +
 	'} \n';
 
@@ -102,11 +102,13 @@ class Ray{
 	}
 }
 
+var a_Position;
+var a_Color;
+var a_TexCoord;
 var u_ViewMatrix;
 var u_ModelMatrix;
 var u_ProjMatrix;
-var a_Position;
-var Color;
+var u_Sampler;
 
 var vbuf;
 var ibuf;
@@ -162,18 +164,20 @@ function loadTexture(gl, n, texture, u_Sampler, cubeImage){
 
 function initiate(){
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
+	
 	a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-	Color = gl.getAttribLocation(gl.program, 'Color');
+	a_Color = gl.getAttribLocation(gl.program, 'a_Color');
+	a_TexCoord = gl.getAttribLocation(gl.program, 'a_TexCoord');
 	u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
 	u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
 	u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
-	
+	u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
+
 	vc.modelMatrix.setTranslate(0, 0, 0);
 
-	var vbuf = gl.createBuffer();
+	vbuf = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vbuf);
-	var ibuf = gl.createBuffer();
+	ibuf = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibuf);
 
 	gl.clearColor(0.9, 0.9, 0.9, 1.0);
@@ -186,8 +190,8 @@ function drawObject(obj){
 	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, gl.false, 24, 0);
 	gl.enableVertexAttribArray(a_Position);
 
-	gl.vertexAttribPointer(Color, 3, gl.FLOAT, gl.false, 24, 12);
-	gl.enableVertexAttribArray(Color);
+	gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, gl.false, 24, 12);
+	gl.enableVertexAttribArray(a_Color);
 	
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
@@ -195,12 +199,8 @@ function drawObject(obj){
 
 	gl.bufferData(gl.ARRAY_BUFFER, obj.a_TexCoord, gl.STATIC_DRAW);
 	gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
-
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
-	gl.uniform1i(gl.getUniformLocation(gl.program, "u_Sampler"),0);
-
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, obj.indices, gl.STATIC_DRAW);
+
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); 
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); 
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); 
@@ -216,17 +216,13 @@ function main() {
 	cubeTexture = gl.createTexture();
 	cubeImage = new Image();
 	cubeImage.onload = function() {
-		cubeImage.width = 512;
-		cubeImage.height = 512;
 		handleTextureLoaded(cubeImage, cubeTexture); 
 	}
 	cubeImage.crossOrigin = "anonymous";
 	cubeImage.src = "https://3nlab.github.io/Project-Clicker/Image.jpg";
 	console.log(cubeImage);
-	cubeImage.width = 512;
-	cubeImage.height = 512;
-	var u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
-	loadTexture(gl, 0, cubeTexture, u_Sampler, cubeImage);
+	u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
+	//loadTexture(gl, 0, cubeTexture, u_Sampler, cubeImage);
 
 	// window.addEventListener("click", function(e){
 	// 	var x = e.clientX;
