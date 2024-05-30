@@ -3,21 +3,17 @@ var VSHADER_SOURCE =
 	'uniform mat4 u_ViewMatrix;\n' +
 	'uniform mat4 u_ModelMatrix;\n' +
 	'uniform mat4 u_ProjMatrix;\n' +
-	'attribute vec3 a_Color; \n' +
-	'varying vec3 vColor; \n' +
 	'attribute vec2 a_TexCoord;\n' +
 	'varying vec2 v_TexCoord;\n' +
 	'void main() { \n' +
 	' gl_Position = u_ProjMatrix * u_ViewMatrix * u_ModelMatrix * vec4(a_Position, 1.0); \n' +
 	' gl_PointSize = 10.0; \n' +
-	' vColor = a_Color; \n' +
 	' v_TexCoord = a_TexCoord;\n' +
 	'} \n';
 
 	var FSHADER_SOURCE = 'precision mediump float;' +
 	'uniform sampler2D u_Sampler;\n' +
 	'varying vec2 v_TexCoord;\n' +
-	'varying vec3 vColor; \n' +
 	'void main() { \n' +
 	' gl_FragColor = texture2D(u_Sampler, v_TexCoord);\n' +
 	'} \n';
@@ -28,20 +24,20 @@ var gl = canvas.getContext('webgl');
 class vertex{
 	constructor(){
 		this.vertices = new Float32Array([
-			1, 1, 0, 1, 1, 1,
-			-1, 1, 0, 1, 0, 1,
-			-1, -1, 0, 1, 0, 0,
-			1, -1, 0, 0, 1, 0
+			1, 1, 0, 1, 0,
+			-1, 1, 0, 0, 0,
+			-1, -1, 0, 0, 1,
+			1, -1, 0, 1, 1
 		]);
 		this.indices = new Uint8Array ([
 			0, 1, 2, 0, 2, 3
 		]);
 		this.modelMatrix = new Matrix4();
 		this.a_TexCoord = new Float32Array([
-			1.0, 1.0,
-			0.0, 1.0,
 			0.0, 0.0,
-			1.0, 0.0
+			1.0, 0.0,
+			1.0, 1.0,
+			0.0, 1.0
 		]);
 	} 
 }
@@ -103,7 +99,6 @@ class Ray{
 }
 
 var a_Position;
-var a_Color;
 var a_TexCoord;
 var u_ViewMatrix;
 var u_ModelMatrix;
@@ -152,21 +147,23 @@ function handleTextureLoaded(cubeImage, texture) {
 }
 
 function loadTexture(gl, n, texture, u_Sampler, cubeImage){
-   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); 
-   gl.activeTexture(gl.TEXTURE0);
-   gl.bindTexture(gl.TEXTURE_2D, texture);
-   
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-   gl.texImage2D(gl.TEXTURE_2D, n, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, cubeImage);
-
-   gl.uniform1i(u_Sampler, 0);
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); 
+	gl.activeTexture(gl.TEXTURE0);
+	gl.bindTexture(gl.TEXTURE_2D, texture);
+	
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+ 
+	gl.texImage2D(gl.TEXTURE_2D, n, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cubeImage);
+ 
+	gl.uniform1i(u_Sampler, n);
 }
 
 function initiate(){
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 	
 	a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-	a_Color = gl.getAttribLocation(gl.program, 'a_Color');
 	a_TexCoord = gl.getAttribLocation(gl.program, 'a_TexCoord');
 	u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
 	u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
@@ -176,9 +173,7 @@ function initiate(){
 	vc.modelMatrix.setTranslate(0, 0, 0);
 
 	vbuf = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, vbuf);
 	ibuf = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibuf);
 
 	gl.clearColor(0.9, 0.9, 0.9, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -186,24 +181,22 @@ function initiate(){
 
 function drawObject(obj){
 	gl.uniformMatrix4fv(u_ModelMatrix, false, obj.modelMatrix.elements);
-	
-	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, gl.false, 24, 0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
+    gl.uniform1i(u_Sampler, 0);
+// 버텍스 데이터를 수정된 버퍼에 바인딩
+    gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW); // 버텍스 데이터 설정
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbuf); 
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibuf); // 인덱스 데이터를 수정된 버퍼에 바인딩
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, obj.indices, gl.STATIC_DRAW); // 인덱스 데이터 설정
+
+	gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, gl.false, 20, 0);
 	gl.enableVertexAttribArray(a_Position);
-
-	gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, gl.false, 24, 12);
-	gl.enableVertexAttribArray(a_Color);
 	
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
-	gl.uniform1i(gl.getUniformLocation(gl.program, "u_Sampler"), 0);
-
-	gl.bufferData(gl.ARRAY_BUFFER, obj.a_TexCoord, gl.STATIC_DRAW);
-	gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, obj.indices, gl.STATIC_DRAW);
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); 
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); 
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); 
+    gl.vertexAttribPointer(a_TexCoord, 2, gl.FLOAT, gl.false, 20, 12); // 수정된 부분
+	gl.enableVertexAttribArray(a_TexCoord);
 
 	gl.drawElements(gl.TRIANGLES, obj.indices.length, gl.UNSIGNED_BYTE, 0);
 }
@@ -216,23 +209,13 @@ function main() {
 	cubeTexture = gl.createTexture();
 	cubeImage = new Image();
 	cubeImage.onload = function() {
-		handleTextureLoaded(cubeImage, cubeTexture); 
+		handleTextureLoaded(cubeImage, cubeTexture);
 	}
 	cubeImage.crossOrigin = "anonymous";
 	cubeImage.src = "https://3nlab.github.io/Project-Clicker/Image.jpg";
-	console.log(cubeImage);
-	u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
-	//loadTexture(gl, 0, cubeTexture, u_Sampler, cubeImage);
-
-	// window.addEventListener("click", function(e){
-	// 	var x = e.clientX;
-	// 	var y = e.clientY;
-	// 	var box = canvas.getBoundingClientRect();
-	// 	x = ((x - box.left) - canvas.width / 2) / (canvas.width/2);
-	// 	y = (canvas.height / 2 - (y - box.top)) / (canvas.height/2);
-	// 	var worldPos = screenToWorld(cam,x,y);
-	// 	var intersection = raycast(cam.position, worldPos);
-	// })
+	cubeImage.width = 512;
+	cubeImage.height = 512;
+	console.log(cubeImage.src);
 	
 	drawObject(vc);
 
