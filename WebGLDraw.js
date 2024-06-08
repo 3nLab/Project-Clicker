@@ -12,10 +12,11 @@ var VSHADER_SOURCE =
 	'} \n';
 
 	var FSHADER_SOURCE = 'precision mediump float;' +
-	'uniform sampler2D u_Sampler;\n' +
+	'uniform sampler2D u_Sampler0;\n' +
+	'uniform sampler2D u_Sampler1;\n' +
 	'varying vec2 v_TexCoord;\n' +
 	'void main() { \n' +
-	' gl_FragColor = texture2D(u_Sampler, v_TexCoord);\n' +
+	' gl_FragColor = texture2D(u_Sampler0, v_TexCoord) + texture2D(u_Sampler1, v_TexCoord);\n' +
 	'} \n';
 
 var canvas = document.getElementById('webgl');
@@ -71,10 +72,10 @@ class camera {
 
 	checkKeyDown(e) {
 		if (e.keyCode === 65) {
-			this.position.x -= 0.1;
+			this.position.x += 0.1;
 		}
 		if (e.keyCode === 68) {
-			this.position.x += 0.1;
+			this.position.x -= 0.1;
 		}
 		if (e.keyCode === 83) {
 			this.position.z += 0.2;
@@ -103,7 +104,8 @@ var a_TexCoord;
 var u_ViewMatrix;
 var u_ModelMatrix;
 var u_ProjMatrix;
-var u_Sampler;
+var u_Sampler0;
+var u_Sampler1;
 
 var vbuf;
 var ibuf;
@@ -137,24 +139,13 @@ function Update_frame(){
 	window.requestAnimationFrame(Update_frame);
 }
 
-function handleTextureLoaded(cubeImage, texture) {
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cubeImage);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-	gl.generateMipmap(gl.TEXTURE_2D);
-	gl.bindTexture(gl.TEXTURE_2D, null);
-}
-
 function loadTexture(gl, n, texture, u_Sampler, cubeImage){
-	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); 
-	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-	
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0); 
+
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
- 
+	
 	gl.texImage2D(gl.TEXTURE_2D, n, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cubeImage);
  
 	gl.uniform1i(u_Sampler, n);
@@ -168,7 +159,8 @@ function initiate(){
 	u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
 	u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
 	u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
-	u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
+	u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0');
+	u_Sampler1 = gl.getUniformLocation(gl.program, 'u_Sampler1');
 
 	vc.modelMatrix.setTranslate(0, 0, 0);
 
@@ -182,13 +174,13 @@ function initiate(){
 function drawObject(obj){
 	gl.uniformMatrix4fv(u_ModelMatrix, false, obj.modelMatrix.elements);
 
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
-    gl.uniform1i(u_Sampler, 0);
-// 버텍스 데이터를 수정된 버퍼에 바인딩
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, cubeTexture1);
+    gl.uniform1i(u_Sampler1, 1);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbuf); // 버텍스 데이터를 수정된 버퍼에 바인딩
     gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW); // 버텍스 데이터 설정
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbuf); 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibuf); // 인덱스 데이터를 수정된 버퍼에 바인딩
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, obj.indices, gl.STATIC_DRAW); // 인덱스 데이터 설정
 
@@ -206,17 +198,20 @@ function main() {
 	if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) { return; }
 	initiate();
 
-	cubeTexture = gl.createTexture();
-	cubeImage = new Image();
-	cubeImage.onload = function() {
-		handleTextureLoaded(cubeImage, cubeTexture);
+	cubeTexture0 = gl.createTexture();
+	cubeTexture1 = gl.createTexture();
+	cubeImage0 = new Image();
+	cubeImage1 = new Image();
+	cubeImage0.onload = function() {
+		loadTexture(gl, 0, cubeTexture0, u_Sampler0, cubeImage0);
 	}
-	cubeImage.crossOrigin = "anonymous";
-	cubeImage.src = "https://3nlab.github.io/Project-Clicker/Image.jpg";
-	cubeImage.width = 512;
-	cubeImage.height = 512;
-	console.log(cubeImage.src);
-	
+	cubeImage1.onload = function() {
+		loadTexture(gl, 1, cubeTexture1, u_Sampler1, cubeImage1);
+	}
+	cubeImage0.crossOrigin = "anonymous";
+	cubeImage0.src = "https://3nlab.github.io/Project-Clicker/Image.jpg";
+	cubeImage1.crossOrigin = "anonymous";
+	cubeImage1.src = "https://3nlab.github.io/Project-Clicker/Image.png";
 	drawObject(vc);
 
 	window.requestAnimationFrame(Update_frame);
