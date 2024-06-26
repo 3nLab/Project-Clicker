@@ -7,7 +7,6 @@
 		'varying vec2 v_TexCoord;\n' +
 		'void main() { \n' +
 		' gl_Position = u_ProjMatrix * u_ViewMatrix * u_ModelMatrix * vec4(a_Position, 1.0); \n' +
-		' gl_PointSize = 10.0; \n' +
 		' v_TexCoord = a_TexCoord;\n' +
 		'} \n';
 
@@ -20,6 +19,7 @@
 
 	var canvas = document.getElementById('webgl');
 	var gl = canvas.getContext('webgl');
+	gl.canvas.height *= 1.3;
 
 	class vertex{
 		constructor(){
@@ -47,6 +47,29 @@
 		}
 	}
 
+	class object{
+		constructor(){
+			this.opening = [];
+			this.option = [];
+			this.ingame = [];
+		}
+
+		opening_init(){
+			var vc = new vertex();
+			vc.setTexture("https://3nlab.github.io/Project-Clicker/Image.jpg");
+			vc.modelMatrix.translate(0.0,0.0,0.0);
+			this.opening.push(vc);
+		}
+		option_init(){
+			var vc = new vertex();
+			vc.setTexture("https://3nlab.github.io/Project-Clicker/Image.png");
+			vc.modelMatrix.translate(0.5,0.5,1.0).scale(0.5,0.5,1);
+			this.option.push(vc);
+		}
+	}
+
+	var obj = new object();
+
 	class camera {
 		constructor(){
 			this.position = new Vector4();
@@ -55,7 +78,7 @@
 			this.rot = 0;
 			this.projMatrix = new Matrix4();
 			this.viewMatrix = new Matrix4();
-			const aspect = canvas.width / canvas.height;
+			const aspect = gl.canvas.height/gl.canvas.width;
 
 			this.position.x = 0.0;
 			this.position.y = 0.0;
@@ -66,7 +89,7 @@
 			this.view.z = -1;
 		
 			//this.projMatrix.setPerspective(this.fov, (canvas.width)/(canvas.height), 0.1, 100);
-			this.projMatrix.setOrtho(-aspect, aspect, -1, 1, 0.1, 1000.0);
+			this.projMatrix.setOrtho(-1, 1, -aspect, aspect, 0.1, 1000.0);
 			this.viewMatrix.setLookAt(this.position.x, this.position.y, this.position.z, this.position.x + this.view.x, this.position.y + this.view.y, this.position.z + this.view.z, 0, 1, 0);
 			
 			window.addEventListener("keydown", function(e){
@@ -76,18 +99,22 @@
 
 		checkKeyDown(e) {
 			if (e.keyCode === 65) {
-				this.position.x -= 0.1;
-				while(draw_List.length){
-					draw_List.pop();
-				}
-				draw_List.push(vc1);
+				obj.opening.forEach((vc) => {
+					draw_List.push(vc);
+					console.log('input open');
+				})
 			}
 			if (e.keyCode === 68) {
-				this.position.x += 0.1;
+				obj.option.forEach((vc) => {
+					console.log('input opt');
+					draw_List.push(vc);
+				})
 			}
 			if (e.keyCode === 83) {
-				this.position.z += 0.2;
-			}
+				obj.option.forEach((vc) => {
+					console.log('input opt');
+					draw_List.push(vc);
+				})}
 			if (e.keyCode === 87) {
 				this.position.z -= 0.2;
 			}
@@ -95,10 +122,13 @@
 		}
 
 		update() {
-			const angleInRadians = this.rot * Math.PI / 180;
 			this.viewMatrix.setLookAt(this.position.x, this.position.y, this.position.z, this.position.x + this.view.x, this.position.y + this.view.y, this.position.z + this.view.z, 0, 1, 0);
+			gl.uniformMatrix4fv(u_ViewMatrix, false, cam.viewMatrix.elements);
+			//const angleInRadians = this.rot * Math.PI / 180;
 		}
 	}
+
+	var cam = new camera();
 
 	class Ray{
 		constructor(position, view){
@@ -119,11 +149,6 @@
 	var vbuf;
 	var ibuf;
 
-	var cam = new camera();
-	var vc = new vertex();	
-	var vc1 = new vertex();
-
-	var start = [];
 
 	function screenToWorld(cam,x,y){
 		var WX = x * 2 - 1;
@@ -145,8 +170,6 @@
 	}
 
 	function Update_frame(){
-		gl.uniformMatrix4fv(u_ViewMatrix, false, cam.viewMatrix.elements);
-		gl.uniformMatrix4fv(u_ProjMatrix, false, cam.projMatrix.elements);
 		draw_List.forEach((vc0) => drawObject(vc0));
 		window.requestAnimationFrame(Update_frame);
 	}
@@ -167,6 +190,7 @@
 	}
 
 	function initiate(){
+		gl.enable(gl.DEPTH_TEST);
 		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 		
 		a_Position = gl.getAttribLocation(gl.program, 'a_Position');
@@ -176,10 +200,13 @@
 		u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
 		u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0');
 
-		vc.modelMatrix.setTranslate(0, 0, 0);
-
+		gl.uniformMatrix4fv(u_ProjMatrix, false, cam.projMatrix.elements);
+	
 		vbuf = gl.createBuffer();
 		ibuf = gl.createBuffer();
+
+		obj.opening_init();
+		obj.option_init();
 
 		gl.clearColor(0.9, 0.9, 0.9, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -212,10 +239,5 @@
 		if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) { return; }
 		initiate();
 
-		vc.setTexture("https://3nlab.github.io/Project-Clicker/Image.jpg");
-		vc1.setTexture("https://3nlab.github.io/Project-Clicker/Image.png");
-		vc.modelMatrix.translate(0.5,0.5,0).scale(0.5,0.5,1);
-		draw_List.push(vc1);
-		draw_List.push(vc);
 		window.requestAnimationFrame(Update_frame);
 	}
